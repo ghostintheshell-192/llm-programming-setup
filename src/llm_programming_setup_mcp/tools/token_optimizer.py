@@ -23,6 +23,13 @@ LLM_COSTS_PER_1K = {
     "gemini_pro": 0.00025,
 }
 
+# Pre-compiled regex patterns for better performance
+REGEX_CODE_BLOCKS = re.compile(r'```[\s\S]*?```')
+REGEX_INLINE_CODE = re.compile(r'`[^`]+`')
+REGEX_URLS = re.compile(r'https?://[^\s]+')
+REGEX_HEADERS = re.compile(r'^#+\s+(.+)', re.MULTILINE)
+REGEX_NUMBERED_LISTS = re.compile(r'^\s*\d+\.\s', re.MULTILINE)
+
 
 class TokenOptimizer:
     """Estimates token usage and suggests optimizations for LLM context."""
@@ -115,10 +122,10 @@ class TokenOptimizer:
         # Basic word counting
         words = len(text.split())
         
-        # Count special elements that might use more tokens
-        code_blocks = len(re.findall(r'```[\s\S]*?```', text))
-        inline_code = len(re.findall(r'`[^`]+`', text))
-        urls = len(re.findall(r'https?://[^\s]+', text))
+        # Count special elements that might use more tokens (using pre-compiled regex)
+        code_blocks = len(REGEX_CODE_BLOCKS.findall(text))
+        inline_code = len(REGEX_INLINE_CODE.findall(text))
+        urls = len(REGEX_URLS.findall(text))
         
         # Rough token estimation
         base_tokens = int(words * self.words_to_tokens_ratio)
@@ -153,11 +160,11 @@ class TokenOptimizer:
         # Count different types of content
         headers = len([line for line in lines if line.strip().startswith('#')])
         bullet_points = len([line for line in lines if line.strip().startswith('-')])
-        numbered_lists = len([line for line in lines if re.match(r'^\s*\d+\.\s', line)])
+        numbered_lists = len(REGEX_NUMBERED_LISTS.findall(content))
         empty_lines = len([line for line in lines if not line.strip()])
         
-        # Identify sections
-        sections = re.findall(r'^#+\s+(.+)', content, re.MULTILINE)
+        # Identify sections (using pre-compiled regex)
+        sections = REGEX_HEADERS.findall(content)
         
         return {
             "total_lines": len(lines),
@@ -229,8 +236,8 @@ class TokenOptimizer:
                 "action": "Keep 3-5 most relevant examples, remove others"
             })
         
-        # Check for long code blocks
-        code_blocks = re.findall(r'```[\s\S]*?```', content)
+        # Check for long code blocks (using pre-compiled regex)
+        code_blocks = REGEX_CODE_BLOCKS.findall(content)
         long_code_blocks = [block for block in code_blocks if len(block) > 500]
         if long_code_blocks:
             suggestions.append({

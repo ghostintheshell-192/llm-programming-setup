@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from ..utils import find_rules_directory
+from ..utils import find_rules_directory, safe_file_read
 
 logger = logging.getLogger(__name__)
 
@@ -55,17 +55,18 @@ class ContextGenerator:
         return context
     
     async def _load_standards_content(self, standards: list) -> Dict[str, str]:
-        """Load content from standards files."""
+        """Load content from standards files with caching."""
         content = {}
         
         for standard_file in standards:
             file_path = self.rules_path / standard_file
             
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content[standard_file] = f.read()
-            except Exception as e:
-                logger.warning(f"Could not load {standard_file}: {e}")
+            # Use cached file reading
+            file_content = safe_file_read(file_path, use_cache=True)
+            if file_content is not None:
+                content[standard_file] = file_content
+            else:
+                logger.warning(f"Could not load {standard_file}")
                 content[standard_file] = f"# {standard_file}\n\n*Content not available*"
         
         return content

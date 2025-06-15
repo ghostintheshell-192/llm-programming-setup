@@ -19,14 +19,27 @@ MAX_CONFIDENCE = 1.0
 # Key files that strongly indicate project type
 KEY_FILES = ["package.json", "requirements.txt", "pubspec.yaml", "*.sln", "CMakeLists.txt"]
 
+# Module-level cache for goto configuration
+_goto_config_cache = None
+_rules_path_cache = None
+
 
 class ProjectScanner:
     """Scans project directories to detect programming languages and applicable standards."""
     
     def __init__(self):
         """Initialize the project scanner with goto.yaml configuration."""
-        self.rules_path = find_rules_directory()
-        self.goto_config = self._load_goto_config()
+        global _goto_config_cache, _rules_path_cache
+        
+        # Use cached rules path if available
+        if _rules_path_cache is None:
+            _rules_path_cache = find_rules_directory()
+        self.rules_path = _rules_path_cache
+        
+        # Use cached goto config if available
+        if _goto_config_cache is None:
+            _goto_config_cache = self._load_goto_config()
+        self.goto_config = _goto_config_cache
     
     def _load_goto_config(self) -> Dict[str, Any]:
         """Load goto.yaml configuration."""

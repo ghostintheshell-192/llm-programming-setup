@@ -3,6 +3,7 @@
 ## Quick Setup
 
 ### 1. Install the MCP Server
+
 ```bash
 cd /data/repos/meta-projects/llm-programming-setup
 pip install -e .
@@ -53,26 +54,31 @@ Use show_copy_instructions
 ## Workflow Example
 
 1. **Navigate to your project**:
+
    ```bash
    cd /path/to/your/project
    ```
 
 2. **Scan the project**:
+
    ```
    Use scan_project
    ```
 
 3. **Generate context**:
+
    ```
    Use generate_context
    ```
 
 4. **Get copy instructions**:
+
    ```
    Use show_copy_instructions
    ```
 
 5. **Optimize if needed**:
+
    ```
    Use optimize_context with context_file="LLM_CONTEXT.md"
    ```
