@@ -7,7 +7,17 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from ..utils import find_rules_directory
+
 logger = logging.getLogger(__name__)
+
+# Constants for confidence calculation
+BASE_CONFIDENCE_PER_MATCH = 0.3
+KEY_FILE_CONFIDENCE_BOOST = 0.4
+MAX_CONFIDENCE = 1.0
+
+# Key files that strongly indicate project type
+KEY_FILES = ["package.json", "requirements.txt", "pubspec.yaml", "*.sln", "CMakeLists.txt"]
 
 
 class ProjectScanner:
@@ -15,24 +25,7 @@ class ProjectScanner:
     
     def __init__(self):
         """Initialize the project scanner with goto.yaml configuration."""
-        # Look for rules directory - try relative to project root first
-        current_dir = Path.cwd()
-        rules_candidates = [
-            current_dir / "rules",  # When running from project root
-            Path(__file__).parent.parent.parent / "rules",  # When installed as package
-            Path(__file__).parent.parent.parent.parent / "rules"  # Alternative structure
-        ]
-        
-        self.rules_path = None
-        for candidate in rules_candidates:
-            if candidate.exists() and (candidate / "goto.yaml").exists():
-                self.rules_path = candidate
-                break
-        
-        if self.rules_path is None:
-            # Fallback to package location
-            self.rules_path = Path(__file__).parent.parent.parent / "rules"
-            
+        self.rules_path = find_rules_directory()
         self.goto_config = self._load_goto_config()
     
     def _load_goto_config(self) -> Dict[str, Any]:
@@ -127,13 +120,7 @@ class ProjectScanner:
             
             if matches:
                 # Calculate confidence based on number of matches and file importance
-                confidence = min(1.0, len(matches) * 0.3)
-                
-                # Boost confidence for key files
-                key_files = ["package.json", "requirements.txt", "pubspec.yaml", "*.sln", "CMakeLists.txt"]
-                for key_file in key_files:
-                    if any(self._match_pattern(match, key_file) for match in matches):
-                        confidence = min(1.0, confidence + 0.4)
+                confidence = self._calculate_confidence(matches)
                 
                 detection_results[language] = {
                     "confidence": confidence,
@@ -142,6 +129,20 @@ class ProjectScanner:
                 }
         
         return detection_results
+    
+    def _calculate_confidence(self, matches: List[str]) -> float:
+        """Calculate confidence score based on matched files."""
+        # Base confidence from number of matches
+        base_confidence = min(MAX_CONFIDENCE, len(matches) * BASE_CONFIDENCE_PER_MATCH)
+        
+        # Boost confidence for key files
+        key_file_boost = 0
+        for key_file in KEY_FILES:
+            if any(self._match_pattern(match, key_file) for match in matches):
+                key_file_boost = KEY_FILE_CONFIDENCE_BOOST
+                break  # Only one boost regardless of number of key files
+        
+        return min(MAX_CONFIDENCE, base_confidence + key_file_boost)
     
     def _match_pattern(self, filename: str, pattern: str) -> bool:
         """Check if filename matches pattern (supports basic glob patterns)."""

@@ -5,6 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from ..utils import find_rules_directory
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,24 +15,7 @@ class ContextGenerator:
     
     def __init__(self):
         """Initialize the context generator."""
-        # Look for rules directory - try relative to project root first
-        current_dir = Path.cwd()
-        rules_candidates = [
-            current_dir / "rules",  # When running from project root
-            Path(__file__).parent.parent.parent / "rules",  # When installed as package
-            Path(__file__).parent.parent.parent.parent / "rules"  # Alternative structure
-        ]
-        
-        self.rules_path = None
-        for candidate in rules_candidates:
-            if candidate.exists() and (candidate / "goto.yaml").exists():
-                self.rules_path = candidate
-                break
-        
-        if self.rules_path is None:
-            # Fallback to package location
-            self.rules_path = Path(__file__).parent.parent.parent / "rules"
-            
+        self.rules_path = find_rules_directory()
         self.templates_path = Path(__file__).parent.parent / "templates"
     
     async def generate(self, scan_result: Dict[str, Any], project_name: Optional[str] = None) -> str:
