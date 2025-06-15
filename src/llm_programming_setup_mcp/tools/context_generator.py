@@ -1,11 +1,9 @@
 """Context generator for creating universal LLM context files."""
 
-import os
-from pathlib import Path
-from typing import Dict, Any, Optional
-import yaml
 import logging
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

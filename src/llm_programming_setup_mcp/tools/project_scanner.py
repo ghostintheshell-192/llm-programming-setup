@@ -1,11 +1,11 @@
 """Project scanner for detecting programming languages and project types."""
 
-import os
-import glob
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-import yaml
+import fnmatch
 import logging
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +154,6 @@ class ProjectScanner:
             return filename.endswith(f".{extension}")
         
         # More complex patterns would need fnmatch
-        import fnmatch
         return fnmatch.fnmatch(filename, pattern)
     
     def _determine_primary_language(self, detection_results: Dict[str, Dict[str, Any]]) -> Optional[str]:

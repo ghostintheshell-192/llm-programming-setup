@@ -1,11 +1,27 @@
 """Token optimizer for estimating and optimizing LLM context token usage."""
 
+import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-import logging
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# Constants for token estimation
+DEFAULT_WORDS_TO_TOKENS_RATIO = 1.3
+CODE_BLOCK_TOKEN_MULTIPLIER = 50
+INLINE_CODE_TOKEN_MULTIPLIER = 2
+URL_TOKEN_MULTIPLIER = 5
+
+# Cost estimates per 1k tokens (as of 2024)
+LLM_COSTS_PER_1K = {
+    "claude_sonnet": 0.003,
+    "claude_haiku": 0.00025,
+    "gpt4": 0.01,
+    "gpt4_turbo": 0.01,
+    "gpt35_turbo": 0.0005,
+    "gemini_pro": 0.00025,
+}
 
 
 class TokenOptimizer:
@@ -15,7 +31,7 @@ class TokenOptimizer:
         """Initialize the token optimizer."""
         # Rough token estimation (words * 1.3 for typical English text)
         # More accurate would require tiktoken, but we want to avoid heavy dependencies
-        self.words_to_tokens_ratio = 1.3
+        self.words_to_tokens_ratio = DEFAULT_WORDS_TO_TOKENS_RATIO
     
     async def estimate_tokens(self, context_file: str) -> Dict[str, Any]:
         """
@@ -108,9 +124,9 @@ class TokenOptimizer:
         base_tokens = int(words * self.words_to_tokens_ratio)
         
         # Add extra tokens for special content
-        code_block_tokens = code_blocks * 50  # Code blocks tend to use more tokens
-        inline_code_tokens = inline_code * 2
-        url_tokens = urls * 5  # URLs often get tokenized into many parts
+        code_block_tokens = code_blocks * CODE_BLOCK_TOKEN_MULTIPLIER  # Code blocks tend to use more tokens
+        inline_code_tokens = inline_code * INLINE_CODE_TOKEN_MULTIPLIER
+        url_tokens = urls * URL_TOKEN_MULTIPLIER  # URLs often get tokenized into many parts
         
         total_tokens = base_tokens + code_block_tokens + inline_code_tokens + url_tokens
         
@@ -155,21 +171,11 @@ class TokenOptimizer:
     
     def _calculate_cost_estimates(self, token_count: int) -> Dict[str, float]:
         """Calculate cost estimates for different LLM providers."""
-        # Approximate costs per 1k tokens (as of 2024)
-        costs_per_1k = {
-            "claude_sonnet": 0.003,    # $3 per 1M tokens
-            "claude_haiku": 0.00025,   # $0.25 per 1M tokens
-            "gpt4": 0.01,              # $10 per 1M tokens (input)
-            "gpt4_turbo": 0.01,        # $10 per 1M tokens
-            "gpt35_turbo": 0.0005,     # $0.50 per 1M tokens
-            "gemini_pro": 0.00025,     # $0.25 per 1M tokens
-        }
-        
         token_k = token_count / 1000
         
         return {
             model: round(cost * token_k, 6)
-            for model, cost in costs_per_1k.items()
+            for model, cost in LLM_COSTS_PER_1K.items()
         }
     
     def _assess_optimization_potential(self, content: str, analysis: Dict[str, Any]) -> str:
@@ -231,7 +237,7 @@ class TokenOptimizer:
                 "type": "code_blocks",
                 "title": "Shorten code examples",
                 "description": f"Found {len(long_code_blocks)} lengthy code blocks",
-                "token_savings": int(len(long_code_blocks) * 50),
+                "token_savings": int(len(long_code_blocks) * CODE_BLOCK_TOKEN_MULTIPLIER),
                 "priority": "medium",
                 "action": "Use shorter, focused code snippets or pseudocode"
             })
