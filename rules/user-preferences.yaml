@@ -1,0 +1,35 @@
+# User Preferences - Customize Claude behavior
+# This file controls how Claude behaves during project work
+
+project_initialization:
+  # How to handle missing mandatory files
+  # Options: "auto" (generate automatically), "ask" (ask for confirmation), "manual" (wait for /init command)
+  mode: "ask"
+  
+  # Files to generate during project initialization
+  files:
+    - "CLAUDE.md"
+    - "README.md"
+    - ".gitignore"
+    - "LICENSE"
+  
+  # Whether to backup existing files before overwriting
+  backup_existing: true
+
+workflow_preferences:
+  # Automatically update projects.yaml before starting work
+  auto_update_projects: true
+  
+  # Show detailed information about which standards are being loaded
+  verbose_standards_loading: false
+  
+  # Suggest new conversation when context becomes too complex
+  suggest_context_reset: false
+  
+  # Maximum number of projects to track in projects.yaml (0 = no limit)
+  max_tracked_projects: 0
+
+# Future preferences can be added here
+# - code_style_preferences
+# - testing_preferences  
+# - deployment_preferences

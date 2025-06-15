@@ -1,0 +1,8 @@
+# Generato automaticamente - non modificare manualmente
+projects:
+  example-project:
+    path: example-project
+    type: python
+  example-project/tests:
+    path: example-project/tests
+    type: python
