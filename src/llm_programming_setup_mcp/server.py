@@ -223,7 +223,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResult:
         )
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the MCP server."""
     logger.info("Starting LLM Programming Setup MCP Server...")
     

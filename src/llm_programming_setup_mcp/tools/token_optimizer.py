@@ -34,7 +34,7 @@ REGEX_NUMBERED_LISTS = re.compile(r'^\s*\d+\.\s', re.MULTILINE)
 class TokenOptimizer:
     """Estimates token usage and suggests optimizations for LLM context."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the token optimizer."""
         # Rough token estimation (words * 1.3 for typical English text)
         # More accurate would require tiktoken, but we want to avoid heavy dependencies

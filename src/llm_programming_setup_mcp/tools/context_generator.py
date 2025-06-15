@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ContextGenerator:
     """Generates universal LLM context files based on project scan results."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the context generator."""
         self.rules_path = find_rules_directory()
         self.templates_path = Path(__file__).parent.parent / "templates"

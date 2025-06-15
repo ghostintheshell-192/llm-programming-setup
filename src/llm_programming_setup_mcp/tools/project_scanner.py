@@ -27,7 +27,7 @@ _rules_path_cache = None
 class ProjectScanner:
     """Scans project directories to detect programming languages and applicable standards."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the project scanner with goto.yaml configuration."""
         global _goto_config_cache, _rules_path_cache
         
