@@ -1,11 +1,11 @@
 """Context generator for creating universal LLM context files."""
 
-import os
-from pathlib import Path
-from typing import Dict, Any, Optional
-import yaml
 import logging
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+from ..utils import find_rules_directory, safe_file_read
 
 logger = logging.getLogger(__name__)
 
@@ -13,26 +13,9 @@ logger = logging.getLogger(__name__)
 class ContextGenerator:
     """Generates universal LLM context files based on project scan results."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the context generator."""
-        # Look for rules directory - try relative to project root first
-        current_dir = Path.cwd()
-        rules_candidates = [
-            current_dir / "rules",  # When running from project root
-            Path(__file__).parent.parent.parent / "rules",  # When installed as package
-            Path(__file__).parent.parent.parent.parent / "rules"  # Alternative structure
-        ]
-        
-        self.rules_path = None
-        for candidate in rules_candidates:
-            if candidate.exists() and (candidate / "goto.yaml").exists():
-                self.rules_path = candidate
-                break
-        
-        if self.rules_path is None:
-            # Fallback to package location
-            self.rules_path = Path(__file__).parent.parent.parent / "rules"
-            
+        self.rules_path = find_rules_directory()
         self.templates_path = Path(__file__).parent.parent / "templates"
     
     async def generate(self, scan_result: Dict[str, Any], project_name: Optional[str] = None) -> str:
@@ -72,17 +55,18 @@ class ContextGenerator:
         return context
     
     async def _load_standards_content(self, standards: list) -> Dict[str, str]:
-        """Load content from standards files."""
+        """Load content from standards files with caching."""
         content = {}
         
         for standard_file in standards:
             file_path = self.rules_path / standard_file
             
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content[standard_file] = f.read()
-            except Exception as e:
-                logger.warning(f"Could not load {standard_file}: {e}")
+            # Use cached file reading
+            file_content = safe_file_read(file_path, use_cache=True)
+            if file_content is not None:
+                content[standard_file] = file_content
+            else:
+                logger.warning(f"Could not load {standard_file}")
                 content[standard_file] = f"# {standard_file}\n\n*Content not available*"
         
         return content

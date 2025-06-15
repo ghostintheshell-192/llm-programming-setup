@@ -1,8 +1,8 @@
 """Template processor for handling copy instructions and file templates."""
 
-from pathlib import Path
-from typing import Dict, Any
 import logging
+from pathlib import Path
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class TemplateProcessor:
     """Handles template processing and copy instructions for different LLMs."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the template processor."""
         self.templates_path = Path(__file__).parent.parent / "templates"
     

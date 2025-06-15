@@ -1,21 +1,44 @@
 """Token optimizer for estimating and optimizing LLM context token usage."""
 
+import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-import logging
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
+
+# Constants for token estimation
+DEFAULT_WORDS_TO_TOKENS_RATIO = 1.3
+CODE_BLOCK_TOKEN_MULTIPLIER = 50
+INLINE_CODE_TOKEN_MULTIPLIER = 2
+URL_TOKEN_MULTIPLIER = 5
+
+# Cost estimates per 1k tokens (as of 2024)
+LLM_COSTS_PER_1K = {
+    "claude_sonnet": 0.003,
+    "claude_haiku": 0.00025,
+    "gpt4": 0.01,
+    "gpt4_turbo": 0.01,
+    "gpt35_turbo": 0.0005,
+    "gemini_pro": 0.00025,
+}
+
+# Pre-compiled regex patterns for better performance
+REGEX_CODE_BLOCKS = re.compile(r'```[\s\S]*?```')
+REGEX_INLINE_CODE = re.compile(r'`[^`]+`')
+REGEX_URLS = re.compile(r'https?://[^\s]+')
+REGEX_HEADERS = re.compile(r'^#+\s+(.+)', re.MULTILINE)
+REGEX_NUMBERED_LISTS = re.compile(r'^\s*\d+\.\s', re.MULTILINE)
 
 
 class TokenOptimizer:
     """Estimates token usage and suggests optimizations for LLM context."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the token optimizer."""
         # Rough token estimation (words * 1.3 for typical English text)
         # More accurate would require tiktoken, but we want to avoid heavy dependencies
-        self.words_to_tokens_ratio = 1.3
+        self.words_to_tokens_ratio = DEFAULT_WORDS_TO_TOKENS_RATIO
     
     async def estimate_tokens(self, context_file: str) -> Dict[str, Any]:
         """
@@ -99,18 +122,18 @@ class TokenOptimizer:
         # Basic word counting
         words = len(text.split())
         
-        # Count special elements that might use more tokens
-        code_blocks = len(re.findall(r'```[\s\S]*?```', text))
-        inline_code = len(re.findall(r'`[^`]+`', text))
-        urls = len(re.findall(r'https?://[^\s]+', text))
+        # Count special elements that might use more tokens (using pre-compiled regex)
+        code_blocks = len(REGEX_CODE_BLOCKS.findall(text))
+        inline_code = len(REGEX_INLINE_CODE.findall(text))
+        urls = len(REGEX_URLS.findall(text))
         
         # Rough token estimation
         base_tokens = int(words * self.words_to_tokens_ratio)
         
         # Add extra tokens for special content
-        code_block_tokens = code_blocks * 50  # Code blocks tend to use more tokens
-        inline_code_tokens = inline_code * 2
-        url_tokens = urls * 5  # URLs often get tokenized into many parts
+        code_block_tokens = code_blocks * CODE_BLOCK_TOKEN_MULTIPLIER  # Code blocks tend to use more tokens
+        inline_code_tokens = inline_code * INLINE_CODE_TOKEN_MULTIPLIER
+        url_tokens = urls * URL_TOKEN_MULTIPLIER  # URLs often get tokenized into many parts
         
         total_tokens = base_tokens + code_block_tokens + inline_code_tokens + url_tokens
         
@@ -137,11 +160,11 @@ class TokenOptimizer:
         # Count different types of content
         headers = len([line for line in lines if line.strip().startswith('#')])
         bullet_points = len([line for line in lines if line.strip().startswith('-')])
-        numbered_lists = len([line for line in lines if re.match(r'^\s*\d+\.\s', line)])
+        numbered_lists = len(REGEX_NUMBERED_LISTS.findall(content))
         empty_lines = len([line for line in lines if not line.strip()])
         
-        # Identify sections
-        sections = re.findall(r'^#+\s+(.+)', content, re.MULTILINE)
+        # Identify sections (using pre-compiled regex)
+        sections = REGEX_HEADERS.findall(content)
         
         return {
             "total_lines": len(lines),
@@ -155,21 +178,11 @@ class TokenOptimizer:
     
     def _calculate_cost_estimates(self, token_count: int) -> Dict[str, float]:
         """Calculate cost estimates for different LLM providers."""
-        # Approximate costs per 1k tokens (as of 2024)
-        costs_per_1k = {
-            "claude_sonnet": 0.003,    # $3 per 1M tokens
-            "claude_haiku": 0.00025,   # $0.25 per 1M tokens
-            "gpt4": 0.01,              # $10 per 1M tokens (input)
-            "gpt4_turbo": 0.01,        # $10 per 1M tokens
-            "gpt35_turbo": 0.0005,     # $0.50 per 1M tokens
-            "gemini_pro": 0.00025,     # $0.25 per 1M tokens
-        }
-        
         token_k = token_count / 1000
         
         return {
             model: round(cost * token_k, 6)
-            for model, cost in costs_per_1k.items()
+            for model, cost in LLM_COSTS_PER_1K.items()
         }
     
     def _assess_optimization_potential(self, content: str, analysis: Dict[str, Any]) -> str:
@@ -223,15 +236,15 @@ class TokenOptimizer:
                 "action": "Keep 3-5 most relevant examples, remove others"
             })
         
-        # Check for long code blocks
-        code_blocks = re.findall(r'```[\s\S]*?```', content)
+        # Check for long code blocks (using pre-compiled regex)
+        code_blocks = REGEX_CODE_BLOCKS.findall(content)
         long_code_blocks = [block for block in code_blocks if len(block) > 500]
         if long_code_blocks:
             suggestions.append({
                 "type": "code_blocks",
                 "title": "Shorten code examples",
                 "description": f"Found {len(long_code_blocks)} lengthy code blocks",
-                "token_savings": int(len(long_code_blocks) * 50),
+                "token_savings": int(len(long_code_blocks) * CODE_BLOCK_TOKEN_MULTIPLIER),
                 "priority": "medium",
                 "action": "Use shorter, focused code snippets or pseudocode"
             })
