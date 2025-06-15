@@ -5,7 +5,6 @@ Example Flask application for testing LLM programming setup.
 
 import logging
 
-import requests
 from flask import Flask, jsonify, request
 from pydantic import BaseModel, ValidationError
 
