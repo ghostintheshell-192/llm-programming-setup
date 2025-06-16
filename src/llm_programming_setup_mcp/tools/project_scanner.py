@@ -51,7 +51,7 @@ class ProjectScanner:
             logger.error(f"Failed to load goto.yaml: {e}")
             return {}
     
-    async def scan(self, path: str = ".") -> Dict[str, Any]:
+    def scan(self, path: str = ".") -> Dict[str, Any]:
         """
         Scan project directory to detect programming language and standards.
         

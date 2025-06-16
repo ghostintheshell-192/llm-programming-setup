@@ -40,7 +40,7 @@ class TokenOptimizer:
         # More accurate would require tiktoken, but we want to avoid heavy dependencies
         self.words_to_tokens_ratio = DEFAULT_WORDS_TO_TOKENS_RATIO
     
-    async def estimate_tokens(self, context_file: str) -> Dict[str, Any]:
+    def estimate_tokens(self, context_file: str) -> Dict[str, Any]:
         """
         Estimate token count for a context file.
         
@@ -85,7 +85,7 @@ class TokenOptimizer:
             "optimization_potential": self._assess_optimization_potential(content, analysis)
         }
     
-    async def suggest_optimizations(self, context_file: str) -> Dict[str, Any]:
+    def suggest_optimizations(self, context_file: str) -> Dict[str, Any]:
         """
         Analyze context and suggest optimizations to reduce token usage.
         
@@ -96,7 +96,7 @@ class TokenOptimizer:
             Dictionary with optimization suggestions
         """
         # First get the token estimation
-        estimation = await self.estimate_tokens(context_file)
+        estimation = self.estimate_tokens(context_file)
         
         if "error" in estimation:
             return estimation

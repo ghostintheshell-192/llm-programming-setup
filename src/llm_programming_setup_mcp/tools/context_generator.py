@@ -18,7 +18,7 @@ class ContextGenerator:
         self.rules_path = find_rules_directory()
         self.templates_path = Path(__file__).parent.parent / "templates"
     
-    async def generate(self, scan_result: Dict[str, Any], project_name: Optional[str] = None) -> str:
+    def generate(self, scan_result: Dict[str, Any], project_name: Optional[str] = None) -> str:
         """
         Generate universal LLM context based on scan results.
         
@@ -40,7 +40,7 @@ class ContextGenerator:
         mandatory_files = scan_result.get("mandatory_files", {})
         
         # Load standards content
-        standards_content = await self._load_standards_content(standards)
+        standards_content = self._load_standards_content(standards)
         
         # Generate context
         context = self._build_context(
@@ -54,7 +54,7 @@ class ContextGenerator:
         
         return context
     
-    async def _load_standards_content(self, standards: list) -> Dict[str, str]:
+    def _load_standards_content(self, standards: list) -> Dict[str, str]:
         """Load content from standards files with caching."""
         content = {}
         

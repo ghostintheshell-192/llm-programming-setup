@@ -64,7 +64,8 @@ async def list_tools() -> ListToolsResult:
                             "type": "string",
                             "description": "Path to project directory (default: current directory)"
                         }
-                    }
+                    },
+                    "additionalProperties": False
                 }
             ),
             Tool(
@@ -81,7 +82,8 @@ async def list_tools() -> ListToolsResult:
                             "type": "string",
                             "description": "Override project name (default: directory name)"
                         }
-                    }
+                    },
+                    "additionalProperties": False
                 }
             ),
             Tool(
@@ -89,7 +91,8 @@ async def list_tools() -> ListToolsResult:
                 description="Show instructions for using generated context with different LLMs",
                 inputSchema={
                     "type": "object",
-                    "properties": {}
+                    "properties": {},
+                    "additionalProperties": False
                 }
             ),
             Tool(
@@ -102,7 +105,9 @@ async def list_tools() -> ListToolsResult:
                             "type": "string",
                             "description": "Path to context file to analyze"
                         }
-                    }
+                    },
+                    "required": ["context_file"],
+                    "additionalProperties": False
                 }
             ),
             Tool(
@@ -115,7 +120,9 @@ async def list_tools() -> ListToolsResult:
                             "type": "string",
                             "description": "Path to context file to optimize"
                         }
-                    }
+                    },
+                    "required": ["context_file"],
+                    "additionalProperties": False
                 }
             )
         ]
@@ -128,7 +135,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResult:
     try:
         if name == "scan_project":
             path = arguments.get("path", ".")
-            result = await project_scanner.scan(path)
+            result = project_scanner.scan(path)
             
             return CallToolResult(
                 content=[
@@ -144,10 +151,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResult:
             project_name = arguments.get("project_name")
             
             # First scan the project
-            scan_result = await project_scanner.scan(path)
+            scan_result = project_scanner.scan(path)
             
             # Generate context
-            context = await context_generator.generate(
+            context = context_generator.generate(
                 scan_result, 
                 project_name=project_name
             )
@@ -175,7 +182,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResult:
             
         elif name == "estimate_tokens":
             context_file = arguments.get("context_file", "LLM_CONTEXT.md")
-            estimation = await token_optimizer.estimate_tokens(context_file)
+            estimation = token_optimizer.estimate_tokens(context_file)
             
             return CallToolResult(
                 content=[
@@ -188,7 +195,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResult:
             
         elif name == "optimize_context":
             context_file = arguments.get("context_file", "LLM_CONTEXT.md")
-            optimizations = await token_optimizer.suggest_optimizations(context_file)
+            optimizations = token_optimizer.suggest_optimizations(context_file)
             
             return CallToolResult(
                 content=[
@@ -235,5 +242,5 @@ async def main() -> None:
         )
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
