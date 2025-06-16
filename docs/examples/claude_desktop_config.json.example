@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "llm-programming-setup": {
+      "command": "python3",
+      "args": ["-m", "llm_programming_setup_mcp.server"],
+      "cwd": "/path/to/llm-programming-setup"
+    }
+  }
+}

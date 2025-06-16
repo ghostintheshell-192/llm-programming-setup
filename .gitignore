@@ -7,6 +7,9 @@ __pycache__/
 *$py.class
 *.pyc
 *.pyo
+venv/
+env/
+.env
 
 # IDE
 .vscode/settings.json
